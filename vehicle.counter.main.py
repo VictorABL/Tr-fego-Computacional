@@ -7,6 +7,7 @@ import time
 import sys
 import cv2
 import numpy as np
+import imutils
 
 from vehicle_counter import VehicleCounter
 
@@ -18,7 +19,7 @@ IMAGE_FILENAME_FORMAT = IMAGE_DIR + "/frame_%04d.png"
 # Support either video file or individual frames
 CAPTURE_FROM_VIDEO = True
 if CAPTURE_FROM_VIDEO:
-    IMAGE_SOURCE = "datasets/output2.mp4" # Video file
+    IMAGE_SOURCE = "../datasets/artificial.avi" # Video file
 else:
     IMAGE_SOURCE = IMAGE_FILENAME_FORMAT # Image sequence
 
@@ -82,8 +83,8 @@ def detect_vehicles(fg_mask):
     log = logging.getLogger("detect_vehicles")
     
     #RAFAEL - PARAMETROS
-    MIN_CONTOUR_WIDTH = 10
-    MIN_CONTOUR_HEIGHT = 19
+    MIN_CONTOUR_WIDTH = 2
+    MIN_CONTOUR_HEIGHT = 2
     
     # Find the contours of any vehicles in the image
     _,contours, hierarchy = cv2.findContours(fg_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -166,7 +167,7 @@ def process_frame(frame_number, frame, bg_subtractor, car_counter):
         # Mark the bounding box and the centroid on the processed frame
         # NB: Fixed the off-by one in the bottom right corner
         cv2.rectangle(processed, (x, y), (x + w - 1, y + h - 1), BOUNDING_BOX_COLOUR, 1)
-        
+        #cv2.putText(processed,("%d,%d" % (w,h)),(x,y), cv2.FONT_HERSHEY_PLAIN, 0.7, (127, 255, 255), 1)
         #RAFAEL - PARAMETRO- Tamanho do veiculo
         #if w*h<700:
         #    cv2.putText(processed,"Moto",(10,50), font, 0.8, (200,255,155), 1)        
@@ -213,24 +214,27 @@ def main():
         frame_number += 1
         log.debug("Capturing frame #%d...", frame_number)
         ret, frame = cap.read()
-        
+        for i in range(0,2,1):
+            ret, frame = cap.read()
         if not ret:
             log.error("Frame capture failed, stopping...")
             break
-        frame= cv2.resize(frame,(0,0),fx=0.5,fy=0.2)
-        
-        if frame_number==0:
+        #Redimensionando a imagem
+        #frame= cv2.resize(frame,(0,0),fx=0.3,fy=0.3)
+        #Girando a imagem 90 graus
+        frame = imutils.rotate_bound(frame,90)
+        '''if frame_number==0:
             bbox = cv2.selectROI(frame, False)
             #print (bbox)
             x1 = int(bbox[0])
             y1 = int(bbox[1])
             x2 = int(bbox[0]) + int(bbox[2])
             y2 = int(bbox[1]) + int(bbox[3])
-            print("[%d a %d] [%d a %d]" % (x1,y2,y1,y2))
+            print("[%d a %d] [%d a %d]" % (y1,y2,x1,x2))
             print (frame.shape)
-            
+        '''    
         #RAFAEL - PARAMETRO        
-        frame = frame[y1:y2,x1:x2] #output1.avi
+        #frame = frame[y1:y2,x1:x2] #output1.avi
         #frame = frame[115:172,72:280] #output1.avi
         #frame = frame[384:573,240:934] #output1.avi
         #frame = frame[130:200,0:230] video1.avi
@@ -250,7 +254,9 @@ def main():
 
         log.debug("Processing frame #%d...", frame_number)
         processed = process_frame(frame_number, frame, bg_subtractor, car_counter)
-
+        #Girar novamente as imagens
+        processed = imutils.rotate_bound(processed,-90)
+        frame = imutils.rotate_bound(frame,-90)
         save_frame(IMAGE_DIR + "/processed_%04d.png"
             , frame_number, processed, "processed frame #%d")
 
@@ -279,6 +285,7 @@ if __name__ == "__main__":
     #log.disabled = True
     #RAFAEL - PARAMETRO - Ligar ou não o log    
     log.setLevel(logging.CRITICAL)
+    #log.setLevel(logging.DEBUG)
     if not os.path.exists(IMAGE_DIR):
         log.debug("Creating image directory `%s`...", IMAGE_DIR)
         os.makedirs(IMAGE_DIR)

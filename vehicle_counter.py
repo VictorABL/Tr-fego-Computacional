@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Feb 21 13:10:28 2017
-
-@author: rafael
-"""
 
 import logging
 import math
@@ -19,7 +14,7 @@ CAR_COLOURS = [ (0,0,255), (0,106,255), (0,216,255), (0,255,182), (0,255,76)
 # ============================================================================
 
 MIN_MOTO_W = 21
-MIN_CAR_W = 22
+MIN_CAR_W = 2
 MIN_BIG_H = 90
 
 class Vehicle(object):
@@ -92,9 +87,9 @@ class VehicleCounter(object):
             elif dx > 0:
                 angle = -180 - math.degrees(math.atan(dx/dy))
             else:
-                angle = 180.0        
+                angle = 180.0
 
-        return distance, angle 
+        return distance, angle
 
 
     @staticmethod
@@ -108,7 +103,7 @@ class VehicleCounter(object):
         # Find if any of the matches fits this vehicle
         for i, match in enumerate(matches):
             contour, centroid = match
-            
+
             vector = self.get_vector(vehicle.last_position, centroid)
             if self.is_valid_vector(vector):
                 vehicle.add_position(centroid)
@@ -116,7 +111,7 @@ class VehicleCounter(object):
                     , centroid[0], centroid[1], vehicle.id, vector[0], vector[1])
                 return i
 
-        # No matches fit...        
+        # No matches fit...
         vehicle.frames_since_seen += 1
         self.log.debug("No match for vehicle #%d. frames_since_seen=%d"
             , vehicle.id, vehicle.frames_since_seen)
@@ -132,13 +127,14 @@ class VehicleCounter(object):
             i = self.update_vehicle(vehicle, matches)
             if i is not None:
                 del matches[i]
-        
+
         # Add new vehicles based on the remaining matches
         for match in matches:
             contour, centroid = match
             #RAFAEL - CRIANDO UM NOVO VEICULO
             new_vehicle = Vehicle(self.next_vehicle_id, centroid)
-            #RAFAEL - CLASSIFICANDO            
+            #RAFAEL - CLASSIFICANDO
+            #print (contour[2]*contour[3]) #Imprimindo altura vs largura
             if contour[2]<=MIN_MOTO_W:
                 new_vehicle.type = 2
             else:
@@ -148,7 +144,7 @@ class VehicleCounter(object):
             self.vehicles.append(new_vehicle)
             self.log.debug("Created new vehicle #%d from match (%d, %d)."
                 , new_vehicle.id, centroid[0], centroid[1])
-            
+
         # Count any uncounted vehicles that are past the divider
         for vehicle in self.vehicles:
             if not vehicle.counted and (vehicle.last_position[1] > self.divider):
@@ -161,16 +157,16 @@ class VehicleCounter(object):
                     self.car_count += 1
                 self.log.debug("Counted vehicle #%d (total count=%d)."
                     , vehicle.id, self.vehicle_count)
-                
+
 
         # Optionally draw the vehicles on an image
         if output_image is not None:
             for vehicle in self.vehicles:
                 vehicle.draw(output_image)
 
-            cv2.putText(output_image, ("Motos: %02d" % self.motocycle_count), (142, 20)
+            cv2.putText(output_image, ("Motos: %02d" % self.motocycle_count), (100, 20)
                 , cv2.FONT_HERSHEY_PLAIN, 0.7, (127, 255, 255), 1)
-            cv2.putText(output_image, ("Carros: %02d" % self.car_count), (142, 10)
+            cv2.putText(output_image, ("Carros: %02d" % self.car_count), (100, 10)
                 , cv2.FONT_HERSHEY_PLAIN, 0.7, (127, 255, 255), 1)
 
         # Remove vehicles that have not been seen long enough
