@@ -12,6 +12,9 @@ from vehicle_counter import VehicleCounter
 
 # ============================================================================
 
+
+
+
 IMAGE_DIR = os.getcwd()
 IMAGE_FILENAME_FORMAT = IMAGE_DIR + "/bg_1.png"
 
